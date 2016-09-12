@@ -72,6 +72,20 @@ class TestNoteRest(object):
         m_rest = etree.Element(mei.REST)
         assert lilypond.rest(m_rest) == "r"
 
+    def test_note_dots(self):
+        m_note = etree.Element(mei.NOTE)
+        m_note.set('pname', 'c')
+        m_note.set('oct', '3')
+        m_note.set('dur', '4')
+        m_note.set('dots', '2')
+        assert lilypond.note(m_note) == "c4.."
+
+    def test_rest_dots(self):
+        m_rest = etree.Element(mei.REST)
+        m_rest.set('dur', '16')
+        m_rest.set('dots', '3')
+        assert lilypond.rest(m_rest) == "r16..."
+
 
 class TestLayerMeasure(object):
     def test_layer_1(self):
