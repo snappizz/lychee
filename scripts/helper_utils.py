@@ -23,22 +23,17 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 #--------------------------------------------------------------------------------------------------
 '''
-Provides a convenience function to reduce code duplication in conversion helper scripts.
+Provides convenience functions to reduce code duplication in conversion helper scripts.
 '''
 import argparse
 import sys
 
 
-def run_conversion_helper_script(
-        core_function,
-        description='',
+def add_infile_and_outfile(
+        parser,
         input_file_type='',
         output_file_type='',
         ):
-
-    parser = argparse.ArgumentParser(
-        description=description,
-        )
 
     # Don't use argparse.FileType. It leaves file pointers open.
 
@@ -56,10 +51,8 @@ def run_conversion_helper_script(
         help='Output {0} file name. Defaults to stdout.'.format(output_file_type),
         )
 
-    args = parser.parse_args()
 
-    input_file_name = args.infile
-    output_file_name = args.outfile
+def process_infile_and_outfile(core_function, input_file_name, output_file_name):
 
     def run(input_file, output_file):
         input_string = input_file.read()
@@ -73,3 +66,23 @@ def run_conversion_helper_script(
         else:
             with open(output_file_name, 'w') as output_file:
                 run(input_file, output_file)
+
+
+def run_conversion_helper_script(
+        core_function,
+        description='',
+        input_file_type='',
+        output_file_type='',
+        ):
+
+    parser = argparse.ArgumentParser(description=description)
+
+    add_infile_and_outfile(
+        parser,
+        input_file_type=input_file_type,
+        output_file_type=output_file_type
+        )
+
+    args = parser.parse_args()
+
+    process_infile_and_outfile(core_function, args.infile, args.outfile)

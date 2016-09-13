@@ -29,6 +29,7 @@ Converts an MEI document to LilyPond and back.
 from lxml import etree
 from lychee.converters.inbound import lilypond as inbound_lilypond
 from lychee.converters.outbound import lilypond as outbound_lilypond
+from lychee.utils import elements_equal
 
 
 def lmei_to_ly_to_lmei(lmei_string):
@@ -36,15 +37,34 @@ def lmei_to_ly_to_lmei(lmei_string):
     lilypond_thing = outbound_lilypond.convert(mei_thing)
     converted_lmei_thing = inbound_lilypond.convert_no_signals(lilypond_thing)
     converted_lmei_string = etree.tostring(converted_lmei_thing, pretty_print=True)
-    return converted_lmei_string
-
+    equal = elements_equal(mei_thing, converted_lmei_thing)
+    return equal, converted_lmei_string
 
 if __name__ == '__main__':
-    from helper_utils import run_conversion_helper_script
+    import argparse
+    from helper_utils import add_infile_and_outfile
+    from helper_utils import process_infile_and_outfile
 
-    run_conversion_helper_script(
-        core_function=lmei_to_ly_to_lmei,
-        description='Converts an MEI document to LilyPond and back.',
-        input_file_type='LMEI',
-        output_file_type='LMEI',
+    parser = argparse.ArgumentParser(description='Converts an MEI document to LilyPond and back.')
+
+    add_infile_and_outfile(parser)
+
+    parser.add_argument(
+        '-c',
+        '--check',
+        action='store_true',
+        help='Throw an error if the output XML is not equal to the input XML.',
         )
+
+    args = parser.parse_args()
+    equal = {}
+
+    def core_function(input_string):
+        # stupid hack to get around lack of "nonlocal" in Python 2
+        equal['value'], output_string = lmei_to_ly_to_lmei(input_string)
+        return output_string
+
+    process_infile_and_outfile(core_function, args.infile, args.outfile)
+
+    if args.check and not equal['value']:
+        raise Exception('Output XML is not equal to input XML.')
