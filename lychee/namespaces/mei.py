@@ -89,6 +89,8 @@ MENSURATION = '{}mensuration'.format(MEINS)
 'An MEI tag name.'
 METER = '{}meter'.format(MEINS)
 'An MEI tag name.'
+M_REST = '{}mRest'.format(MEINS)
+'An MEI tag name.'
 MUSIC = '{}music'.format(MEINS)
 'An MEI tag name.'
 NAME = '{}name'.format(MEINS)

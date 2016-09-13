@@ -34,6 +34,7 @@ Converts an MEI document to a LilyPond document.
     Refer to :ref:`how-to-use-converters` for more information.
 '''
 
+import lychee
 from lychee import exceptions
 from lychee.namespaces import mei
 
@@ -51,6 +52,7 @@ def convert(document, **kwargs):
     CONV_FUNCS = {
         mei.NOTE: note,
         mei.REST: rest,
+        mei.M_REST: measure_rest,
         mei.LAYER: layer,
         mei.MEASURE: measure,
         mei.STAFF: staff,
@@ -128,6 +130,15 @@ def chord(m_chord):
     return l_chord
 
 
+def measure_rest(m_measure_rest):
+    '''
+    '''
+    assert m_measure_rest.tag == mei.M_REST
+    l_measure_rest = 'R'
+    l_measure_rest += duration(m_measure_rest)
+    return l_measure_rest
+
+
 def layer(m_layer):
     '''
     '''
@@ -140,6 +151,8 @@ def layer(m_layer):
             post.append(rest(elem))
         elif elem.tag == mei.CHORD:
             post.append(chord(elem))
+        elif elem.tag == mei.M_REST:
+            post.append(measure_rest(elem))
         else:
             lychee.log('missed a {} in a <layer>'.format(elem.tag))
 
