@@ -4,8 +4,8 @@
 # Program Name:           Lychee
 # Program Description:    MEI document manager for formalized document control
 #
-# Filename:               scripts/ly_to_lmei_to_ly.py
-# Purpose:                Converts a LilyPond document to MEI and back.
+# Filename:               lychee/utils/__init__.py
+# Purpose:                Initializes the "utils" module.
 #
 # Copyright (C) 2016 Nathan Ho
 #
@@ -22,26 +22,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 #--------------------------------------------------------------------------------------------------
-'''
-Converts a LilyPond document to MEI and back.
-'''
 
-from lychee.converters.inbound import lilypond as inbound_lilypond
-from lychee.converters.outbound import lilypond as outbound_lilypond
+# NOTE: the __init__ module is not built in the API
 
-
-def ly_to_lmei_to_ly(lilypond_string):
-    mei_thing = inbound_lilypond.convert_no_signals(lilypond_string)
-    converted_lilypond_string = outbound_lilypond.convert(mei_thing)
-    return converted_lilypond_string
-
-
-if __name__ == '__main__':
-    from helper_utils import run_conversion_helper_script
-
-    run_conversion_helper_script(
-        core_function=ly_to_lmei_to_ly,
-        description='Converts a LilyPond document to MEI and back.',
-        input_file_type='LilyPond',
-        output_file_type='LilyPond',
-        )
+from lychee.utils.elements_equal import elements_equal

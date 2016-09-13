@@ -29,44 +29,42 @@ Converts an MEI document to LilyPond and back.
 from lxml import etree
 from lychee.converters.inbound import lilypond as inbound_lilypond
 from lychee.converters.outbound import lilypond as outbound_lilypond
+from lychee.utils import elements_equal
 
 
 def lmei_to_ly_to_lmei(lmei_string):
     mei_thing = etree.fromstring(lmei_string)
     lilypond_thing = outbound_lilypond.convert(mei_thing)
-    converted_lmei_thing = inbound_lilypond.convert(lilypond_thing)
+    converted_lmei_thing = inbound_lilypond.convert_no_signals(lilypond_thing)
     converted_lmei_string = etree.tostring(converted_lmei_thing, pretty_print=True)
-    return converted_lmei_string
-
+    equal = elements_equal(mei_thing, converted_lmei_thing)
+    return equal, converted_lmei_string
 
 if __name__ == '__main__':
     import argparse
+    from helper_utils import add_infile_and_outfile
+    from helper_utils import process_infile_and_outfile
 
-    parser = argparse.ArgumentParser(
-        description='Converts an MEI document to LilyPond and back.')
+    parser = argparse.ArgumentParser(description='Converts an MEI document to LilyPond and back.')
 
-    # Don't use argparse.FileType. It leaves file pointers open.
-
-    parser.add_argument(
-        'infile',
-        type=str,
-        help='Input MEI file name.'
-        )
+    add_infile_and_outfile(parser)
 
     parser.add_argument(
-        'outfile',
-        type=str,
-        help='Output MEI file name.'
+        '-c',
+        '--check',
+        action='store_true',
+        help='Throw an error if the output XML is not equal to the input XML.',
         )
 
     args = parser.parse_args()
+    equal = {}
 
-    input_file_name = args.infile
-    output_file_name = args.outfile
+    def core_function(input_string):
+        # stupid hack to get around lack of "nonlocal" in Python 2
+        equal['value'], output_string = lmei_to_ly_to_lmei(input_string)
+        return output_string
 
-    with open(input_file_name, 'r') as input_file:
-        with open(output_file_name, 'w') as output_file:
+    process_infile_and_outfile(core_function, args.infile, args.outfile)
 
-            lmei_string = input_file.read()
-            converted_lmei_string = lmei_to_ly_to_lmei(lmei_string)
-            output_file.write(converted_lmei_string)
+    if args.check and not equal['value']:
+        raise Exception('Output XML is not equal to input XML.')
