@@ -137,10 +137,10 @@ def articulations(m_thing):
     l_articulations = []
     for m_articulation in m_articulations:
         if m_articulation in _ARTICULATIONS:
-            l_articulations.append(_ARTICULATIONS[m_articulation])
+            l_articulations.append(' ' + _ARTICULATIONS[m_articulation])
         else:
             lychee.log('missed a {} in an @artic'.format(m_articulation))
-    return ' ' + ' '.join(l_articulations)
+    return ''.join(l_articulations)
 
 
 def note(m_note):
