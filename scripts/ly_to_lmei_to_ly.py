@@ -31,7 +31,7 @@ from lychee.converters.outbound import lilypond as outbound_lilypond
 
 
 def ly_to_lmei_to_ly(lilypond_string):
-    mei_thing = inbound_lilypond.convert(lilypond_string)
+    mei_thing = inbound_lilypond.convert_no_signals(lilypond_string)
     converted_lilypond_string = outbound_lilypond.convert(mei_thing)
     return converted_lilypond_string
 

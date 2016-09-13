@@ -31,7 +31,7 @@ from lychee.converters.inbound import lilypond
 
 
 def ly_to_lmei(lilypond_string):
-    mei_thing = lilypond.convert(lilypond_string)
+    mei_thing = lilypond.convert_no_signals(lilypond_string)
     lmei_string = etree.tostring(mei_thing, pretty_print=True)
     return lmei_string
 
