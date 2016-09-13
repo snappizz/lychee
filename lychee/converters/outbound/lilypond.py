@@ -82,6 +82,41 @@ _VALID_ACCIDENTALS = {
     'ff': 'eses',
 }
 
+_ARTICULATIONS = {
+    'acc': r'\accent',
+    'stacc': r'\staccato',
+    'ten': r'\tenuto',
+    'stacciss': r'\staccatissimo',
+    'marc': r'\marcato',
+    'marc-stacc': r'\staccato \marcato',
+    # 'spicc':
+    # 'doit':
+    # 'rip':
+    # 'plop':
+    # 'fall':
+    # 'bend':
+    # 'flip':
+    # 'smear':
+    'dnbow': r'\downbow',
+    'upbow': r'\upbow',
+    # 'harm':
+    'snap': r'\snappizzicato',
+    # 'fingernail':
+    'ten-stacc': r'\portato',
+    # 'damp':
+    # 'dampall':
+    'open': r'\open',
+    'stop': r'\stopped',
+    # 'dbltongue':
+    # 'trpltongue':
+    # 'heel':
+    # 'toe':
+    # 'tap':
+    # 'lhpizz':
+    # 'dot':
+    # 'stroke':
+}
+
 
 def duration(m_thing):
     '''
@@ -92,6 +127,20 @@ def duration(m_thing):
     assert dot_count >= 0
     post += '.' * dot_count
     return post
+
+
+def articulations(m_thing):
+    '''
+    Extract the articulations from the @artic attribute of an MEI object as a LilyPond string.
+    '''
+    m_articulations = m_thing.get('artic', '').split()
+    l_articulations = []
+    for m_articulation in m_articulations:
+        if m_articulation in _ARTICULATIONS:
+            l_articulations.append(_ARTICULATIONS[m_articulation])
+        else:
+            lychee.log('missed a {} in an @artic'.format(m_articulation))
+    return ' ' + ' '.join(l_articulations)
 
 
 def note(m_note):
@@ -105,6 +154,7 @@ def note(m_note):
     if m_note.get('accid'):
         post += '!'
     post += duration(m_note)
+    post += articulations(m_note)
     return post
 
 
@@ -114,6 +164,7 @@ def rest(m_rest):
     assert m_rest.tag == mei.REST
     post = 'r'
     post += duration(m_rest)
+    post += articulations(m_rest)
     return post
 
 
@@ -125,7 +176,9 @@ def chord(m_chord):
     for m_note in m_chord.iter(tag=mei.NOTE):
         l_chord.append(note(m_note))
 
-    l_chord = '<{0}>{1}'.format(' '.join(l_chord), duration(m_chord))
+    l_chord = ' '.join(l_chord)
+    l_chord += duration(m_chord)
+    l_chord += articulations(m_chord)
 
     return l_chord
 
@@ -136,6 +189,7 @@ def measure_rest(m_measure_rest):
     assert m_measure_rest.tag == mei.M_REST
     l_measure_rest = 'R'
     l_measure_rest += duration(m_measure_rest)
+    l_measure_rest += articulations(m_measure_rest)
     return l_measure_rest
 
 
