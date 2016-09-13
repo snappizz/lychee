@@ -37,33 +37,11 @@ def ly_to_lmei(lilypond_string):
 
 
 if __name__ == '__main__':
-    import argparse
+    from helper_utils import run_conversion_helper_script
 
-    parser = argparse.ArgumentParser(
-        description='Converts a LilyPond document to an MEI document.')
-
-    # Don't use argparse.FileType. It leaves file pointers open.
-
-    parser.add_argument(
-        'infile',
-        type=str,
-        help='Input LilyPond file name.'
+    run_conversion_helper_script(
+        core_function=ly_to_lmei,
+        description='Converts a LilyPond document to an MEI document.',
+        input_file_type='LilyPond',
+        output_file_type='LMEI',
         )
-
-    parser.add_argument(
-        'outfile',
-        type=str,
-        help='Output MEI file name.'
-        )
-
-    args = parser.parse_args()
-
-    input_file_name = args.infile
-    output_file_name = args.outfile
-
-    with open(input_file_name, 'r') as input_file:
-        with open(output_file_name, 'w') as output_file:
-
-            lilypond_string = input_file.read()
-            lmei_string = ly_to_lmei(lilypond_string)
-            output_file.write(lmei_string)
