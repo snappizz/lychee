@@ -590,16 +590,24 @@ def process_dots(l_node, attrib, action):
     return attrib
 
 
-@log.wrap('debug', 'process tie')
-def process_tie(l_thing, attrib):
+@log.wrap('debug', 'has tie')
+def has_tie(l_thing):
     '''
-    Given a parsed LilyPond note/chord and the "attrib" dictionary for its yet-to-be-created
-    MEI element, set the tie attribute if required.
+    Given a parsed LilyPond note/chord, determine whether it has a tie.
     '''
-    if l_thing.get('tie') is not None:
-        attrib['tie'] = 'i'
+    post_events = l_thing.get('post_events', [])
+    return any([post_event.get('ly_type') == 'tie' for post_event in post_events])
 
-    return attrib
+
+@log.wrap('debug', 'add tie')
+def add_tie(attrib):
+    '''
+    Given an attribute dictionary for an LMEI element, add a tie to it.
+
+    All tie attributes are initial at this stage of conversion. Medial and final tie attributes
+    are fixed at the layer level.
+    '''
+    attrib['tie'] = 'i'
 
 
 @log.wrap('debug', 'convert chord', 'action')
@@ -619,7 +627,7 @@ def do_chord(l_chord, m_layer, action):
     attrib = {'dur': l_chord['dur']}
     process_dots(l_chord, attrib)
 
-    chord_has_tie = l_chord.get('tie') is not None
+    chord_has_tie = has_tie(l_chord)
 
     m_chord = etree.SubElement(m_layer, mei.CHORD, attrib)
 
@@ -631,10 +639,8 @@ def do_chord(l_chord, m_layer, action):
 
         process_accidental(l_note['accid'], attrib)
         process_forced_accid(l_note, attrib)
-        process_tie(l_note, attrib)
-
-        if chord_has_tie:
-            attrib['tie'] = 'i'
+        if chord_has_tie or has_tie(l_note):
+            add_tie(attrib)
 
         m_note = etree.SubElement(m_chord, mei.NOTE, attrib)
 
@@ -666,7 +672,8 @@ def do_note(l_note, m_layer, action):
     process_accidental(l_note['accid'], attrib)
     process_forced_accid(l_note, attrib)
     process_dots(l_note, attrib)
-    process_tie(l_note, attrib)
+    if has_tie(l_note):
+        add_tie(attrib)
 
     m_note = etree.SubElement(m_layer, mei.NOTE, attrib)
 

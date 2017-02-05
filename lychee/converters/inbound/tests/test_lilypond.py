@@ -843,19 +843,6 @@ class TestRestSpacer(object):
 
 class TestTie(object):
 
-    @staticmethod
-    def ez_note(tie=None):
-        return {
-            'ly_type': 'note',
-            'pname': 'c',
-            'oct': '',
-            'dur': '4',
-            'accid': [],
-            'accid_force': None,
-            'dots': [],
-            'tie': tie
-        }
-
     def test_basic_tie(self):
         '''
         Test the equivalent of the LilyPond code "c c~ c~ c c". This covers
@@ -866,8 +853,18 @@ class TestTie(object):
         - Tied note before untied note
         - Untied note before untied note
         '''
-        n = self.ez_note
-        l_layer = [n(), n('~'), n('~'), n(), n()]
+        l_layer = [
+            {'ly_type': 'note', 'pname': 'c', 'oct': '', 'dur': '4', 'accid': [],
+                'accid_force': None, 'dots': [], 'post_events': []},
+            {'ly_type': 'note', 'pname': 'c', 'oct': '', 'dur': '4', 'accid': [],
+                'accid_force': None, 'dots': [], 'post_events': [{'ly_type': 'tie'}]},
+            {'ly_type': 'note', 'pname': 'c', 'oct': '', 'dur': '4', 'accid': [],
+                'accid_force': None, 'dots': [], 'post_events': [{'ly_type': 'tie'}]},
+            {'ly_type': 'note', 'pname': 'c', 'oct': '', 'dur': '4', 'accid': [],
+                'accid_force': None, 'dots': [], 'post_events': []},
+            {'ly_type': 'note', 'pname': 'c', 'oct': '', 'dur': '4', 'accid': [],
+                'accid_force': None, 'dots': [], 'post_events': []}
+        ]
         m_layer = etree.Element(mei.LAYER)
         actual = lilypond.do_layer(l_layer, m_layer, 1)
         tie_attributes = [node.get('tie') for node in actual]
