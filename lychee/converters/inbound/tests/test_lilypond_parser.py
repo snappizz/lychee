@@ -182,7 +182,7 @@ class TestNoteChordRestSpacer(object):
         """Works as expected."""
         content = 'bes,!256..'
         expected = {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'dur': '256',
-            'dots': ['.', '.'], 'ly_type': 'note', 'tie': None}
+            'dots': ['.', '.'], 'ly_type': 'note', 'post_events': []}
         actual = parser.parse(content, rule_name='note')
         assert expected == actual
 
@@ -193,7 +193,7 @@ class TestNoteChordRestSpacer(object):
         """
         content = 'c4!'
         expected = {'pname': 'c', 'accid': [], 'oct': None, 'accid_force': None, 'dur': '4',
-            'dots': [], 'ly_type': 'note', 'tie': None}
+            'dots': [], 'ly_type': 'note', 'post_events': []}
         actual = parser.parse(content, rule_name='note')
         assert expected == actual
 
@@ -201,7 +201,7 @@ class TestNoteChordRestSpacer(object):
         """Works without duration."""
         content = 'bes,'
         expected = {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': None, 'dur': None,
-            'dots': [], 'ly_type': 'note', 'tie': None}
+            'dots': [], 'ly_type': 'note', 'post_events': []}
         actual = parser.parse(content, rule_name='note')
         assert expected == actual
 
@@ -210,13 +210,13 @@ class TestNoteChordRestSpacer(object):
         content = '<bes,! ees,?>256..'
         expected = {
             'notes': [
-                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'tie': None},
-                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'tie': None},
+                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'post_events': []},
+                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'post_events': []},
             ],
             'dur': '256',
             'dots': ['.', '.'],
             'ly_type': 'chord',
-            'tie': None
+            'post_events': []
         }
         actual = parser.parse(content, rule_name='chord')
         assert expected == actual
@@ -229,12 +229,12 @@ class TestNoteChordRestSpacer(object):
         content = '<bes,!>256..'
         expected = {
             'notes': [
-                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'tie': None},
+                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'post_events': []},
             ],
             'dur': '256',
             'dots': ['.', '.'],
             'ly_type': 'chord',
-            'tie': None
+            'post_events': []
         }
         actual = parser.parse(content, rule_name='chord')
         assert expected == actual
@@ -250,7 +250,7 @@ class TestNoteChordRestSpacer(object):
             'dur': '256',
             'dots': ['.', '.'],
             'ly_type': 'chord',
-            'tie': None
+            'post_events': []
         }
         actual = parser.parse(content, rule_name='chord')
         assert expected == actual
@@ -260,14 +260,14 @@ class TestNoteChordRestSpacer(object):
         content = "<bes,! ees,? g'>"
         expected = {
             'notes': [
-                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'tie': None},
-                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'tie': None},
-                {'pname': 'g', 'accid': [], 'oct': "'", 'accid_force': None, 'tie': None},
+                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'post_events': []},
+                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'post_events': []},
+                {'pname': 'g', 'accid': [], 'oct': "'", 'accid_force': None, 'post_events': []},
             ],
             'dur': None,
             'dots': [],
             'ly_type': 'chord',
-            'tie': None
+            'post_events': []
         }
         actual = parser.parse(content, rule_name='chord')
         print(str(actual))
@@ -284,42 +284,42 @@ class TestNoteChordRestSpacer(object):
     def test_rest_1(self):
         """Works as expected."""
         content = 'r256..'
-        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'rest'}
+        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'rest', 'post_events': []}
         actual = parser.parse(content, rule_name='rest')
         assert expected == actual
 
     def test_rest_2(self):
         """Works without duration."""
         content = 'r'
-        expected = {'dur': None, 'dots': [], 'ly_type': 'rest'}
+        expected = {'dur': None, 'dots': [], 'ly_type': 'rest', 'post_events': []}
         actual = parser.parse(content, rule_name='rest')
         assert expected == actual
 
     def test_spacer_1(self):
         """Works as expected."""
         content = 's256..'
-        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer'}
+        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer', 'post_events': []}
         actual = parser.parse(content, rule_name='spacer')
         assert expected == actual
 
     def test_spacer_2(self):
         """Works without duration."""
         content = 's'
-        expected = {'dur': None, 'dots': [], 'ly_type': 'spacer'}
+        expected = {'dur': None, 'dots': [], 'ly_type': 'spacer', 'post_events': []}
         actual = parser.parse(content, rule_name='spacer')
         assert expected == actual
 
     def test_measure_rest_1(self):
         """Works as expected."""
         content = 'R256..'
-        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'measure_rest'}
+        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'measure_rest', 'post_events': []}
         actual = parser.parse(content, rule_name='measure_rest')
         assert expected == actual
 
     def test_measure_rest_2(self):
         """Works without duration."""
         content = 'R'
-        expected = {'dur': None, 'dots': [], 'ly_type': 'measure_rest'}
+        expected = {'dur': None, 'dots': [], 'ly_type': 'measure_rest', 'post_events': []}
         actual = parser.parse(content, rule_name='measure_rest')
         assert expected == actual
 
@@ -327,7 +327,7 @@ class TestNoteChordRestSpacer(object):
         """music_node: note"""
         content = 'bes,!256..'
         expected = {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'dur': '256',
-            'dots': ['.', '.'], 'tie': None, 'ly_type': 'note'}
+            'dots': ['.', '.'], 'ly_type': 'note', 'post_events': []}
         actual = parser.parse(content, rule_name='music_node')
         assert expected == actual
 
@@ -336,13 +336,13 @@ class TestNoteChordRestSpacer(object):
         content = '<bes,! ees,?>256..'
         expected = {
             'notes': [
-                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'tie': None},
-                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'tie': None},
+                {'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': '!', 'post_events': []},
+                {'pname': 'e', 'accid': ['es'], 'oct': ',', 'accid_force': '?', 'post_events': []},
             ],
             'dur': '256',
             'dots': ['.', '.'],
-            'tie': None,
-            'ly_type': 'chord'
+            'ly_type': 'chord',
+            'post_events': []
         }
         actual = parser.parse(content, rule_name='music_node')
         assert expected == actual
@@ -350,14 +350,14 @@ class TestNoteChordRestSpacer(object):
     def test_music_node_3(self):
         """music_node: rest"""
         content = 'r256..'
-        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'rest'}
+        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'rest', 'post_events': []}
         actual = parser.parse(content, rule_name='music_node')
         assert expected == actual
 
     def test_music_node_4(self):
         """music_node: spacer"""
         content = 's256..'
-        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer'}
+        expected = {'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer', 'post_events': []}
         actual = parser.parse(content, rule_name='music_node')
         assert expected == actual
 
@@ -370,7 +370,7 @@ class TestLayers(object):
     def test_unmarked_layer_1(self):
         """With one music node."""
         content = 's256..'
-        expected = [{'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer'}]
+        expected = [{'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer', 'post_events': []}]
         actual = parser.parse(content, rule_name='unmarked_layer')
         assert expected == actual
 
@@ -378,8 +378,8 @@ class TestLayers(object):
         """With two music nodes."""
         content = 's2 s4'
         expected = [
-            {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-            {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+            {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
         ]
         actual = parser.parse(content, rule_name='unmarked_layer')
         assert expected == actual
@@ -388,9 +388,9 @@ class TestLayers(object):
         """With three music nodes, the second without a duration."""
         content = 's2 s s4.'
         expected = [
-            {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-            {'dur': None, 'dots': [], 'ly_type': 'spacer'},
-            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer'},
+            {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': None, 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer', 'post_events': []},
         ]
         actual = parser.parse(content, rule_name='unmarked_layer')
         assert expected == actual
@@ -398,7 +398,7 @@ class TestLayers(object):
     def test_marked_layer_1(self):
         """With one music node."""
         content = '{s256..}'
-        expected = [{'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer'}]
+        expected = [{'dur': '256', 'dots': ['.', '.'], 'ly_type': 'spacer', 'post_events': []}]
         actual = parser.parse(content, rule_name='marked_layer')
         assert expected == actual
 
@@ -406,8 +406,8 @@ class TestLayers(object):
         """With two music nodes."""
         content = '{s2 s4}'
         expected = [
-            {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-            {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+            {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
         ]
         actual = parser.parse(content, rule_name='marked_layer')
         assert expected == actual
@@ -416,9 +416,9 @@ class TestLayers(object):
         """With three music nodes, the second without a duration."""
         content = '{s2 s s4.}'
         expected = [
-            {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-            {'dur': None, 'dots': [], 'ly_type': 'spacer'},
-            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer'},
+            {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': None, 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer', 'post_events': []},
         ]
         actual = parser.parse(content, rule_name='marked_layer')
         assert expected == actual
@@ -427,9 +427,9 @@ class TestLayers(object):
         """With three music nodes, the second without a duration."""
         content = 's2 s s4.'
         expected = {'layers': [[
-            {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-            {'dur': None, 'dots': [], 'ly_type': 'spacer'},
-            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer'},
+            {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': None, 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+            {'dur': '4', 'dots': ['.'], 'ly_type': 'spacer', 'post_events': []},
         ]]}
         actual = parser.parse(content, rule_name='monophonic_layers')
         assert expected == actual
@@ -438,7 +438,7 @@ class TestLayers(object):
         """With one Voice context."""
         content = '<< { s2 } >>'
         expected = {'layers': [
-            [{'dur': '2', 'dots': [], 'ly_type': 'spacer'},],
+            [{'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},],
         ]}
         actual = parser.parse(content, rule_name='polyphonic_layers')
         assert expected == actual
@@ -447,10 +447,10 @@ class TestLayers(object):
         """With two Voice contexts."""
         content = r'<< { s2 } \\ { s4 s } >>'
         expected = {'layers': [
-            [{'dur': '2', 'dots': [], 'ly_type': 'spacer'},],
+            [{'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},],
             [
-                {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
-                {'dur': None, 'dots': [], 'ly_type': 'spacer'},
+                {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                {'dur': None, 'dots': [], 'ly_type': 'spacer', 'post_events': []},
             ],
         ]}
         actual = parser.parse(content, rule_name='polyphonic_layers')
@@ -460,9 +460,9 @@ class TestLayers(object):
         """With three Voice contexts."""
         content = r'<< { s2 } \\ { s4 } \\ { s16 } >>'
         expected = {'layers': [
-            [{'dur': '2', 'dots': [], 'ly_type': 'spacer'},],
-            [{'dur': '4', 'dots': [], 'ly_type': 'spacer'},],
-            [{'dur': '16', 'dots': [], 'ly_type': 'spacer'},],
+            [{'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},],
+            [{'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},],
+            [{'dur': '16', 'dots': [], 'ly_type': 'spacer', 'post_events': []},],
         ]}
         actual = parser.parse(content, rule_name='polyphonic_layers')
         assert expected == actual
@@ -610,10 +610,10 @@ class TestStaffAndMusicBlock(object):
             'ly_type': 'staff',
             'initial_settings': [{'ly_type': 'time', 'count': '3', 'unit': '4'}],
             'content': [{'layers': [[
-                {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                 {'ly_type': 'barcheck'},
-                {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
+                {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
             ]]}],
         }
         actual = parser.parse(content, rule_name='staff_content')
@@ -627,12 +627,12 @@ class TestStaffAndMusicBlock(object):
             'initial_settings': [],
             'content': [{'layers': [
                 [
-                    {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                    {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                    {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                    {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                 ],
                 [
-                    {'dur': '2', 'dots': [], 'ly_type': 'rest'},
-                    {'dur': '4', 'dots': [], 'ly_type': 'rest'},
+                    {'dur': '2', 'dots': [], 'ly_type': 'rest', 'post_events': []},
+                    {'dur': '4', 'dots': [], 'ly_type': 'rest', 'post_events': []},
                 ],
             ]}],
         }
@@ -651,16 +651,16 @@ class TestStaffAndMusicBlock(object):
             'content': [
                 {'layers': [
                     [
-                        {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                        {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                        {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                        {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                     ],
                     [
-                        {'dur': '2', 'dots': [], 'ly_type': 'rest'},
-                        {'dur': '4', 'dots': [], 'ly_type': 'rest'},
+                        {'dur': '2', 'dots': [], 'ly_type': 'rest', 'post_events': []},
+                        {'dur': '4', 'dots': [], 'ly_type': 'rest', 'post_events': []},
                     ],
                 ]},
                 {'layers': [[{'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': None,
-                             'dur': '128', 'dots': [], 'tie': None, 'ly_type': 'note'}]],
+                             'dur': '128', 'dots': [], 'ly_type': 'note', 'post_events': []}]],
                 },
             ],
         }
@@ -674,10 +674,10 @@ class TestStaffAndMusicBlock(object):
             'ly_type': 'staff',
             'initial_settings': [{'ly_type': 'time', 'count': '3', 'unit': '4'}],
             'content': [{'layers': [[
-                {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                 {'ly_type': 'barcheck'},
-                {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
+                {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
             ]]}],
         }
         actual = parser.parse(content, rule_name='staff')
@@ -691,12 +691,12 @@ class TestStaffAndMusicBlock(object):
             'initial_settings': [],
             'content': [{'layers': [
                 [
-                    {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                    {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                    {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                    {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                 ],
                 [
-                    {'dur': '2', 'dots': [], 'ly_type': 'rest'},
-                    {'dur': '4', 'dots': [], 'ly_type': 'rest'},
+                    {'dur': '2', 'dots': [], 'ly_type': 'rest', 'post_events': []},
+                    {'dur': '4', 'dots': [], 'ly_type': 'rest', 'post_events': []},
                 ],
             ]}],
         }
@@ -715,16 +715,16 @@ class TestStaffAndMusicBlock(object):
             'content': [
                 {'layers': [
                     [
-                        {'dur': '2', 'dots': [], 'ly_type': 'spacer'},
-                        {'dur': '4', 'dots': [], 'ly_type': 'spacer'},
+                        {'dur': '2', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
+                        {'dur': '4', 'dots': [], 'ly_type': 'spacer', 'post_events': []},
                     ],
                     [
-                        {'dur': '2', 'dots': [], 'ly_type': 'rest'},
-                        {'dur': '4', 'dots': [], 'ly_type': 'rest'},
+                        {'dur': '2', 'dots': [], 'ly_type': 'rest', 'post_events': []},
+                        {'dur': '4', 'dots': [], 'ly_type': 'rest', 'post_events': []},
                     ],
                 ]},
                 {'layers': [[{'pname': 'b', 'accid': ['es'], 'oct': ',', 'accid_force': None,
-                             'dur': '128', 'dots': [], 'tie': None, 'ly_type': 'note'}]],
+                             'dur': '128', 'dots': [], 'ly_type': 'note', 'post_events': []}]],
                 },
             ],
         }
