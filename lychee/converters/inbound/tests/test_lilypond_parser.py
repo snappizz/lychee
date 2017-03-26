@@ -362,6 +362,92 @@ class TestNoteChordRestSpacer(object):
         assert expected == actual
 
 
+class TestPostEvents(object):
+    """
+    For post events such as ties and slurs.
+    """
+
+    def test_tie_1(self):
+        """One tie."""
+        content = 'c4~'
+        expected = {
+            'ly_type': 'note',
+            'pname': 'c',
+            'accid': [],
+            'oct': None,
+            'dur': '4',
+            'accid_force': None,
+            'dots': [],
+            'post_events': [{'ly_type': 'tie'}]
+        }
+        actual = parser.parse(content, rule_name='music_node')
+        assert expected == actual
+
+    def test_slur_1(self):
+        """Opening slur."""
+        content = 'c4('
+        expected = {
+            'ly_type': 'note',
+            'pname': 'c',
+            'accid': [],
+            'oct': None,
+            'dur': '4',
+            'accid_force': None,
+            'dots': [],
+            'post_events': [{'ly_type': 'slur', 'slur': '('}]
+        }
+        actual = parser.parse(content, rule_name='music_node')
+        assert expected == actual
+
+    def test_slur_2(self):
+        """Opening slur."""
+        content = 'c4)'
+        expected = {
+            'ly_type': 'note',
+            'pname': 'c',
+            'accid': [],
+            'oct': None,
+            'dur': '4',
+            'accid_force': None,
+            'dots': [],
+            'post_events': [{'ly_type': 'slur', 'slur': ')'}]
+        }
+        actual = parser.parse(content, rule_name='music_node')
+        assert expected == actual
+
+    def test_tie_slur(self):
+        """A tie and an opening slur."""
+        content = 'c4~('
+        expected = {
+            'ly_type': 'note',
+            'pname': 'c',
+            'accid': [],
+            'oct': None,
+            'dur': '4',
+            'accid_force': None,
+            'dots': [],
+            'post_events': [{'ly_type': 'tie'}, {'ly_type': 'slur', 'slur': '('}]
+        }
+        actual = parser.parse(content, rule_name='music_node')
+        assert expected == actual
+
+    def test_slur_tie(self):
+        """An opening slur and a tie."""
+        content = 'c4(~'
+        expected = {
+            'ly_type': 'note',
+            'pname': 'c',
+            'accid': [],
+            'oct': None,
+            'dur': '4',
+            'accid_force': None,
+            'dots': [],
+            'post_events': [{'ly_type': 'slur', 'slur': '('}, {'ly_type': 'tie'}]
+        }
+        actual = parser.parse(content, rule_name='music_node')
+        assert expected == actual
+
+
 class TestLayers(object):
     """
     For polyphonic and monophonic layers.
