@@ -448,6 +448,32 @@ def fix_ties_in_layer(m_layer, action):
                 _fix_tie_target(note, pitch_map)
 
 
+@log.wrap('debug', 'fix slurs', 'action')
+def fix_slurs_in_layer(m_layer, action):
+    '''
+    Fix @slur attribute values in an LMEI <layer> element.
+    '''
+
+    current_slur = False
+    for node in m_layer:
+        if node.tag in (mei.NOTE, mei.CHORD):
+            slur_attrib = node.get('slur')
+            if current_slur:
+                # If there is an ongoing tie, set all @ties to medial
+                # until a terminal @tie shows up.
+                if slur_attrib == 't1':
+                    current_slur = False
+                else:
+                    node.attrib['slur'] = 'm1'
+            else:
+                # If there is no ongoing tie, unset all @ties until
+                # an initial @tie shows up.
+                if slur_attrib == 'i1':
+                    current_slur = True
+                elif 'slur' in node.attrib:
+                    del node.attrib['slur']
+
+
 @log.wrap('debug', 'convert voice/layer', 'action')
 def do_layer(l_layer, m_container, layer_n, action):
     '''
@@ -483,6 +509,7 @@ def do_layer(l_layer, m_container, layer_n, action):
                 action.failure('unknown node type: {ly_type}', ly_type=obj['ly_type'])
 
     fix_ties_in_layer(m_layer)
+    fix_slurs_in_layer(m_layer)
 
     return m_layer
 
@@ -610,6 +637,26 @@ def add_tie(attrib):
     attrib['tie'] = 'i'
 
 
+@log.wrap('debug', 'process slur')
+def process_slur(l_thing, attrib):
+    '''
+    Handle the @slur attribute for LilyPond nodes. Only emits initial
+    and final slur attributes (medial is handled later), and does not
+    process overlapping slurs.
+    '''
+    post_events = l_thing.get('post_events', [])
+    # Find the first slur post event
+    for post_event in post_events:
+        if post_event.get('ly_type') == 'slur':
+            slur = post_event.get('slur')
+            if slur == '(':
+                attrib['slur'] = 'i1'
+                break
+            elif slur == ')':
+                attrib['slur'] = 't1'
+                break
+
+
 @log.wrap('debug', 'convert chord', 'action')
 def do_chord(l_chord, m_layer, action):
     """
@@ -626,6 +673,7 @@ def do_chord(l_chord, m_layer, action):
 
     attrib = {'dur': l_chord['dur']}
     process_dots(l_chord, attrib)
+    process_slur(l_chord, attrib)
 
     chord_has_tie = has_tie(l_chord)
 
@@ -674,6 +722,7 @@ def do_note(l_note, m_layer, action):
     process_dots(l_note, attrib)
     if has_tie(l_note):
         add_tie(attrib)
+    process_slur(l_note, attrib)
 
     m_note = etree.SubElement(m_layer, mei.NOTE, attrib)
 
