@@ -77,8 +77,6 @@ Here is a sample of the data outputted from this module.
 
 import datetime
 
-from mercurial import error, ui, hg
-
 import lychee
 from lychee.signals import outbound
 
@@ -124,38 +122,4 @@ def convert_helper(repo_dir):
         If the repository fails to initialize for any reason, this function returns an empty
         dictionary rather than raising an exception.
     '''
-    myui = ui.ui()
-    try:
-        repo = hg.repository(myui, repo_dir)
-    except error.RepoError:
-        return {}
-
-    post = {'history': [], 'users': {}, 'changesets': {}}
-
-    for i in repo:
-        # get this changeset
-        cset = repo[i]
-
-        # get its ID as hexadecimal string
-        cset_id = cset.hex()
-
-        # append the ID to the list of changeset order
-        post['history'].append(cset_id)
-
-        # add the ID to the author's list of changesets
-        if cset.user() in post['users']:
-            post['users'][cset.user()].append(cset_id)
-        else:
-            post['users'][cset.user()] = [cset_id]
-
-        # add changeset details
-        post['changesets'][cset_id] = {
-            'hash': cset.hex(),
-            'user': cset.user(),
-            'date': cset.date()[0],
-            'files': prep_files(cset.files()),
-            'description': cset.description(),
-            'number': cset.rev(),
-        }
-
-    return post
+    return {}
