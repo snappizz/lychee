@@ -40,6 +40,7 @@ except ImportError:
     import mock
 
 from lxml import etree
+from mercurial import error as hg_error
 import pytest
 import signalslot
 
@@ -79,6 +80,7 @@ class TestGeneral(TestInteractiveSession):
         '''
         actual = self.session
         assert actual._doc is None
+        assert actual._hug is None
         assert actual._temp_dir is False
         assert actual._repo_dir is None
         assert isinstance(actual._registrar, registrar.Registrar)
@@ -97,10 +99,18 @@ class TestGeneral(TestInteractiveSession):
 
     def test_init_with_vcs_1(self):
         '''
-        The __init__() method complains if "vcs" is set.
+        The __init__() method sets the "vcs" appropriately.
+        '''
+        actual = session.InteractiveSession(vcs='mercurial')
+        assert actual._vcs == 'mercurial'
+
+    def test_init_with_vcs_2(self):
+        '''
+        The __init__() method complains when the "vcs" is an invalid type.
         '''
         with pytest.raises(exceptions.RepositoryError) as err:
-            session.InteractiveSession(vcs='mercurial')
+            session.InteractiveSession(vcs='git')
+        # TODO: check the err
 
     @mock.patch('lychee.workflow.session.steps.flush_inbound_converters')
     @mock.patch('lychee.workflow.session.steps.flush_inbound_views')
@@ -117,9 +127,16 @@ class TestGeneral(TestInteractiveSession):
 
     def test_vcs_property_1(self):
         '''
-        The "vcs_enabled" property should be False.
+        When the VCS is enabled, the "vcs_enabled" property should be True.
         '''
-        actual = session.InteractiveSession()
+        actual = session.InteractiveSession(vcs='mercurial')
+        assert actual.vcs_enabled is True
+
+    def test_vcs_property_2(self):
+        '''
+        When the VCS is disabled, the "vcs_enabled" property should be False.
+        '''
+        actual = session.InteractiveSession(vcs=None)
         assert actual.vcs_enabled is False
 
 
@@ -130,7 +147,7 @@ class TestRepository(TestInteractiveSession):
 
     def setUp(self):
         "Make an InteractiveSession."
-        self.session = session.InteractiveSession()
+        self.session = session.InteractiveSession(vcs='mercurial')
 
     def test_get_repo_dir_1(self):
         '''
@@ -159,6 +176,7 @@ class TestRepository(TestInteractiveSession):
         actual = self.session
         actual._repo_dir = path
         actual._temp_dir = True
+        actual._hug = 'hug'
 
         actual.unset_repo_dir()
 
@@ -177,6 +195,7 @@ class TestRepository(TestInteractiveSession):
         actual = self.session
         actual._repo_dir = path
         actual._temp_dir = False
+        actual._hug = 'hug'
 
         actual.unset_repo_dir()
 
@@ -213,6 +232,7 @@ class TestRepository(TestInteractiveSession):
             assert actual.startswith('/var/')
         else:
             raise NotImplementedError("This test isn't yet implemented on this platform.")
+        assert os.path.exists(os.path.join(actual, '.hg'))
         assert sess.run_outbound.call_count == 1
 
     def test_set_repo_dir_1b(self):
@@ -224,6 +244,51 @@ class TestRepository(TestInteractiveSession):
         sess.run_outbound = mock.Mock()
         actual = sess.set_repo_dir('', run_outbound=False)
         assert sess.run_outbound.call_count == 0
+
+    @mock.patch('lychee.workflow.session.hug')
+    def test_set_repo_dir_2(self, mock_hug):
+        '''
+        When it makes a temp dir but can't initialize a new Hg repo.
+        '''
+        sess = self.session
+        sess.run_outbound = mock.Mock()
+        mock_hug.Hug.side_effect = hg_error.RepoError
+        with pytest.raises(exceptions.RepositoryError) as exc:
+            sess.set_repo_dir('', run_outbound=True)
+        assert session._CANNOT_SAFELY_HG_INIT == exc.value.args[0]
+        # the _repo_dir still must have been set, so unset_repo_dir() can delete it on __del__()
+        assert sess._repo_dir is not None
+        assert sess.run_outbound.call_count == 0
+
+    @mock.patch('lychee.workflow.session.hug')
+    def test_set_repo_dir_3(self, mock_hug):
+        '''
+        When the path exists, and it initializes fine.
+        '''
+        sess = self.session
+        sess.run_outbound = mock.Mock()
+        actual = sess.set_repo_dir('../tests', run_outbound=True)
+        assert actual.endswith('tests')
+        assert sess._hug is not None
+        assert sess._temp_dir is False
+        assert sess._repo_dir == actual
+        assert sess.run_outbound.call_count == 1
+
+    @mock.patch('lychee.workflow.session.hug')
+    def test_set_repo_dir_4(self, mock_hug):
+        '''
+        When the path must be created, and it initializes fine.
+        '''
+        assert not os.path.exists('zests')  # for the test to work, this dir must not already exist
+        sess = self.session
+        sess.run_outbound = mock.Mock()
+        try:
+            actual = sess.set_repo_dir('zests', run_outbound=True)
+        finally:
+            assert actual.endswith('zests')
+            assert os.path.exists(actual)
+            shutil.rmtree(actual)
+        assert sess.run_outbound.call_count == 1
 
     def test_set_repo_dir_5(self):
         '''
@@ -385,6 +450,58 @@ class TestActionStart(TestInteractiveSession):
         assert self.session._cleanup_for_new_action.call_count == 2
         assert self.session.run_outbound.call_count == 0
 
+    def test_when_hg_update_works(self):
+        '''
+        A unit test (fully mocked) for when running Hug.update() works.
+        Initial revision is on a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        parent_revision = '99:801774903828 tip'
+        target_revision = '40:964b28acc4ee'
+        self.session._cleanup_for_new_action = mock.Mock()
+        self.session.run_outbound = mock.Mock()
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'parent': parent_revision})
+        self.session._hug.update = mock.Mock()
+        self.session._inbound_views_info = 'IBV'
+
+        self.session._action_start(revision=target_revision)
+
+        self.session.run_outbound.assert_called_with(views_info='IBV')
+        assert self.session._cleanup_for_new_action.call_count == 2
+        assert self.session._hug.update.call_count == 2
+        self.session._hug.update.assert_any_call(target_revision)
+        # the tag name (the "tip" part) should be removed
+        self.session._hug.update.assert_called_with(parent_revision[:-4])  # final call
+
+    def test_when_hg_update_fails(self):
+        '''
+        A unit test (fully mocked) for when running Hug.update() fails.
+        Initial revision is not on a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        parent_revision = '99:801774903828'
+        target_revision = '44444444444444444'
+        self.session._cleanup_for_new_action = mock.Mock()
+        self.session.run_outbound = mock.Mock()
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'parent': parent_revision})
+        # we need a complicated mock here so one call to update() fails, but the 2nd, in the finally
+        # suite, won't fail
+        def update_effect(revision):
+            "side-effect for Hug.update()"
+            if revision != parent_revision:
+                raise RuntimeError('=^.^=  meow')
+        self.session._hug.update = mock.Mock(side_effect=update_effect)
+
+        self.session._action_start(revision=target_revision)
+
+        assert self.session.run_outbound.call_count == 0
+        assert self.session._cleanup_for_new_action.call_count == 2
+        assert self.session._hug.update.call_count == 2
+        self.session._hug.update.assert_any_call(target_revision)
+        self.session._hug.update.assert_called_with(parent_revision)  # final call
+
     def test_revision_ignored(self):
         '''
         A unit test (fully mocked) to check the "revision" argument is ignored if VCS is disabled.
@@ -406,6 +523,7 @@ class TestActionStart(TestInteractiveSession):
         '''
         self.session = session.InteractiveSession()
         input_ly = r"""\new Staff { \clef "treble" a''4 b'16 c''2  | \clef "bass" d?2 e!2  | f,,2 fis,2  | }"""
+
         # pre-condition
         assert not os.path.exists(os.path.join(self.session.get_repo_dir(), 'all_files.mei'))
         # unfortunately we need a mock for this, so we can be sure it was called
@@ -543,6 +661,68 @@ class TestRunOutbound(TestInteractiveSession):
     @mock.patch('lychee.signals.outbound.STARTED')
     def test_single_format(self, mock_out_started, mock_out_finished, mock_do_out):
         '''
+        A single format is registered for outbound conversion. Repo is at a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        outbound_dtype = 'mei'
+        views_info = 'IBV'
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'tag': 'tip'})
+        mock_do_out.return_value = {'placement': None, 'document': None}
+
+        signals.outbound.REGISTER_FORMAT.emit(dtype=outbound_dtype, who='test_single_format')
+        try:
+            self.session.run_outbound(views_info)
+        finally:
+            signals.outbound.UNREGISTER_FORMAT.emit(dtype=outbound_dtype, who='test_single_format')
+
+        mock_out_started.emit.assert_called_once_with()
+        mock_do_out.assert_called_once_with(
+            self.session.get_repo_dir(),
+            views_info,
+            outbound_dtype)
+        mock_out_finished.emit.assert_called_once_with(
+            dtype=outbound_dtype,
+            placement=mock_do_out.return_value['placement'],
+            document=mock_do_out.return_value['document'],
+            changeset='tip')
+
+    @mock.patch('lychee.workflow.steps.do_outbound_steps')
+    @mock.patch('lychee.signals.outbound.CONVERSION_FINISHED')
+    @mock.patch('lychee.signals.outbound.STARTED')
+    def test_three_formats(self, mock_out_started, mock_out_finished, mock_do_out):
+        '''
+        Three formats are registered for outbound conversion. Repo is not at a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        outbound_dtypes = ['document', 'mei', 'vcs']
+        views_info = 'IBV'
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'parent': '16:96eb6fba2374'})
+        mock_do_out.return_value = {'placement': None, 'document': None}
+
+        for dtype in outbound_dtypes:
+            signals.outbound.REGISTER_FORMAT.emit(dtype=dtype, who='test_single_format')
+        try:
+            self.session.run_outbound(views_info)
+        finally:
+            for dtype in outbound_dtypes:
+                signals.outbound.UNREGISTER_FORMAT.emit(dtype=dtype, who='test_single_format')
+
+        mock_out_started.emit.assert_called_once_with()
+        assert mock_do_out.call_count == 3
+        assert mock_out_finished.emit.call_count == 3
+        mock_out_finished.emit.assert_any_call(
+            dtype=outbound_dtypes[0],
+            placement=mock_do_out.return_value['placement'],
+            document=mock_do_out.return_value['document'],
+            changeset='16:96eb6fba2374')
+
+    @mock.patch('lychee.workflow.steps.do_outbound_steps')
+    @mock.patch('lychee.signals.outbound.CONVERSION_FINISHED')
+    @mock.patch('lychee.signals.outbound.STARTED')
+    def test_vcs_disabled(self, mock_out_started, mock_out_finished, mock_do_out):
+        '''
         A single format is registered for outbound conversion. VCS is disabled.
         '''
         outbound_dtype = 'mei'
@@ -565,6 +745,61 @@ class TestRunOutbound(TestInteractiveSession):
             placement=mock_do_out.return_value['placement'],
             document=mock_do_out.return_value['document'],
             changeset='')
+
+    @mock.patch('lychee.workflow.steps.do_outbound_steps')
+    def test_when_hg_update_works(self, mock_do_out):
+        '''
+        A unit test (fully mocked) for when running Hug.update() works.
+        Initial revision is on a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        parent_revision = '99:801774903828 tip'
+        target_revision = '40:964b28acc4ee'
+        self.session._registrar.register('mei')
+        self.session._cleanup_for_new_action = mock.Mock()
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'parent': parent_revision})
+        self.session._hug.update = mock.Mock()
+        self.session._repo_dir = '/path/to/repo'
+        views_info = 'IBV'
+
+        self.session.run_outbound(views_info=views_info, revision=target_revision)
+
+        mock_do_out.assert_called_with('/path/to/repo', views_info, 'mei')
+        assert self.session._cleanup_for_new_action.called
+        assert self.session._hug.update.call_count == 2
+        self.session._hug.update.assert_any_call(target_revision)
+        # the tag name (the "tip" part) should be removed
+        self.session._hug.update.assert_called_with(parent_revision[:-4])  # final call
+
+    @mock.patch('lychee.workflow.steps.do_outbound_steps')
+    def test_when_hg_update_fails(self, mock_do_out):
+        '''
+        A unit test (fully mocked) for when running Hug.update() fails.
+        Initial revision is not on a tag.
+        '''
+        self.session = session.InteractiveSession(vcs='mercurial')
+        parent_revision = '99:801774903828'
+        target_revision = '44444444444444444'
+        self.session._cleanup_for_new_action = mock.Mock()
+        self.session._hug = mock.Mock()
+        self.session._hug.summary = mock.Mock(return_value={'parent': parent_revision})
+        # we need a complicated mock here so one call to update() fails, but the 2nd, in the finally
+        # suite, won't fail
+        def update_effect(revision):
+            "side-effect for Hug.update()"
+            if revision != parent_revision:
+                raise RuntimeError('=^.^=  meow')
+        self.session._hug.update = mock.Mock(side_effect=update_effect)
+        self.session._repo_dir = '/path/to/repo'
+
+        self.session.run_outbound(revision=target_revision)
+
+        assert not mock_do_out.called
+        assert self.session._cleanup_for_new_action.called
+        assert self.session._hug.update.call_count == 2
+        self.session._hug.update.assert_any_call(target_revision)
+        self.session._hug.update.assert_called_with(parent_revision)  # final call
 
     @mock.patch('lychee.workflow.steps.do_outbound_steps')
     def test_revision_ignored(self, mock_do_out):

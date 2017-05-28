@@ -112,7 +112,7 @@ class TestVCSStep(TestInteractiveSession):
 
     def setUp(self):
         "Make an InteractiveSession."
-        self.session = session.InteractiveSession()
+        self.session = session.InteractiveSession(vcs='mercurial')
         # disconnect any pre-existing slots
         def disconnect_everything(signal):
             for slot in signal.slots:
@@ -124,6 +124,24 @@ class TestVCSStep(TestInteractiveSession):
         disconnect_everything(signals.vcs.INIT)
         disconnect_everything(signals.vcs.ADD)
         disconnect_everything(signals.vcs.COMMIT)
+
+    def test_do_vcs_1(self):
+        '''
+        That do_vcs() works when the VCS is enabled.
+        '''
+        start_slot = make_slot_mock()
+        finished_slot = make_slot_mock()
+        signals.vcs.START.connect(start_slot)
+        signals.vcs.FINISHED.connect(finished_slot)
+
+        try:
+            steps.do_vcs(self.session, ['pathnames'])
+        finally:
+            signals.vcs.START.disconnect(start_slot)
+            signals.vcs.FINISHED.disconnect(finished_slot)
+
+        start_slot.assert_called_with(session=self.session, pathnames=['pathnames'])
+        finished_slot.assert_called_with()
 
     def test_do_vcs_2(self):
         '''
