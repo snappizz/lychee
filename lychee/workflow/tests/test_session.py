@@ -40,8 +40,8 @@ except ImportError:
     import mock
 
 from lxml import etree
-import pytest
 # from mercurial import error as hg_error
+import pytest
 import signalslot
 
 from lychee import exceptions
