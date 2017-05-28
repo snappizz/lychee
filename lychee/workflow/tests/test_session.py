@@ -534,14 +534,12 @@ class TestActionStart(TestInteractiveSession):
         self.session.run_outbound.assert_called_with(views_info='IBV')
         assert self.session._cleanup_for_new_action.call_count == 2
 
-    @pytest.mark.xfail
     def test_everything_works_unmocked(self):
         '''
         An integration test (no mocks) for when everything works and all code paths are excuted.
         '''
         self.session = session.InteractiveSession()
         input_ly = r"""\new Staff { \clef "treble" a''4 b'16 c''2  | \clef "bass" d?2 e!2  | f,,2 fis,2  | }"""
-
         # pre-condition
         assert not os.path.exists(os.path.join(self.session.get_repo_dir(), 'all_files.mei'))
         # unfortunately we need a mock for this, so we can be sure it was called
@@ -628,7 +626,6 @@ class TestRunWorkflow(TestInteractiveSession):
         assert self.session._cleanup_for_new_action.called
         assert self.session.run_outbound.call_count == 0
 
-    @pytest.mark.xfail
     def test_new_section(self):
         '''
         An integration test (no mocks) for when everything works and a new <section> is created.
