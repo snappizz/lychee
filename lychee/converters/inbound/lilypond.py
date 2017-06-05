@@ -385,7 +385,7 @@ def do_staff(l_staff, m_section, m_staffdef, context=None, action=None):
             m_each_staff = etree.SubElement(m_section, mei.STAFF, {'n': m_staffdef.get('n')})
             for layer_n, l_layer in enumerate(l_each_staff['layers']):
                 # we must add 1 to layer_n or else the @n would start at 0, not 1
-                do_layer(l_layer, m_each_staff, layer_n + 1, context=context)
+                do_layer(l_layer, m_each_staff, layer_n + 1, m_staffdef=m_staffdef, context=context)
             postprocess_staff(m_each_staff)
 
 
@@ -465,14 +465,17 @@ def _render_accidental(m_note, accidentals):
         accidentals[pitch_name_and_octave] = accidental
 
 
-def fix_accidentals_in_layer(m_layer):
+def fix_accidentals_in_layer(m_layer, m_staffdef):
     '''
     Using a model of LilyPond's accidental rendering, fix the @accid/@accid.ges attributes and the
     temporary @accid.force attributes.
 
-    Limitations: only supports C major and 4/4 time. Two different accidentals on the same note
+    Limitations: only supports 4/4 time. Two different accidentals on the same note
     in the same chord may not be rendered correctly.
     '''
+    if m_staffdef is None:
+        m_staffdef = {}
+    key_signature = m_staffdef.get("key.sig", "0")
     accidentals = {}
     measure_length = 1
     phase = 0
@@ -613,22 +616,25 @@ def fix_slurs_in_layer(m_layer, action):
 
 
 @log.wrap('debug', 'convert voice/layer', 'action')
-def do_layer(l_layer, m_container, layer_n, context=None, action=None):
+def do_layer(l_layer, m_staff, layer_n, m_staffdef=None, context=None, action=None):
     '''
     Convert a LilyPond Voice context into an LMEI <layer> element.
 
     :param l_layer: The LilyPond Voice context from Grako.
     :type l_layer: list of dict
-    :param m_container: The MEI <measure> or <staff> that will hold the layer.
-    :type m_container: :class:`lxml.etree.Element`
+    :param m_staff: The MEI <staff> that will hold the layer.
+    :type m_staff: :class:`lxml.etree.Element`
+    :param int layer_n: The @n attribute value for this <layer>.
+    :param m_staffdef: The initial <staffDef> for the containing staff. This is necessary to
+    correctly handle key and time signatures.
+
     :returns: The new <layer> element.
     :rtype: :class:`lxml.etree.Element`
-    :param int layer_n: The @n attribute value for this <layer>.
 
     If the Voice context contains an unknown node type, :func:`do_layer` emits a failure log message
     and continues processing the following nodes in the Voice context.
     '''
-    m_layer = etree.SubElement(m_container, mei.LAYER, {'n': str(layer_n)})
+    m_layer = etree.SubElement(m_staff, mei.LAYER, {'n': str(layer_n)})
 
     node_converters = {
         'chord': do_chord,
@@ -652,7 +658,7 @@ def do_layer(l_layer, m_container, layer_n, context=None, action=None):
 
     fix_ties_in_layer(m_layer)
     fix_slurs_in_layer(m_layer)
-    fix_accidentals_in_layer(m_layer)
+    fix_accidentals_in_layer(m_layer, m_staffdef)
 
     return m_layer
 
