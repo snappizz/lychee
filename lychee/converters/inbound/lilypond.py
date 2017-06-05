@@ -422,16 +422,33 @@ def _hide_accidental(m_note):
     m_note.remove(m_accid)
 
 
-def _render_accidental(m_note, accidentals):
+def _render_accidental(m_note, accidentals, key_signature):
     '''
-    Given a note and the persistent accidentals in the current layer, show or hide the accidental
-    depending on factors such as pitch, accidental forcing, and ties.
+    Decide whether to display or hide a note's accidental based on context.
+
+    :param m_note: The LMEI <note> object to modify. It must contain an <accid> as its first child.
+    :type m_note: :class:`lxml.etree.Element`
+    :param dict accidentals: A map from tuples of the form (octave, pitch_name) to accidental
+    values like 's' or 'ff', representing the current set of persistent accidentals in this measure
+    but not including accidentals that are tied in from a previous measure.
+    :param dict key_signature: A map from pitch names to accidental values like 's' or 'ff',
+    representing the accidental settings specified by the current key signature.
+    :returns: ``None``
     '''
+    # Get some basic properties on the note pitch.
     pitch = note_pitch(m_note)
+    pitch_name = pitch[1]
     pitch_name_and_octave = (pitch[0], pitch[1])
     accidental = pitch[2]
+
+    # The accidental value that the key signature sets as default.
+    key_signature_accidental = key_signature[pitch_name]
+
+    # The accidental MEI element.
     m_accid = m_note[0]
 
+    # If this is set to true, then the next note on this same staff line/space will be forced to
+    # display an accidental.
     force_next = False
 
     # Always display an accidental if it is forced or cautionary.
@@ -442,17 +459,18 @@ def _render_accidental(m_note, accidentals):
     elif m_note.get('tie') in ('m', 't'):
         _hide_accidental(m_note)
 
-        # If we are at the end of a non-natural tie that has persisted across a barline, set the
-        # accidental to a nonsense value so that the next note on this same staff line/space is
-        # forced to display its accidental.
+        # Hoo boy. If we are at the end of a tie that has persisted across a barline, and the note
+        # of that tie does not match the current key signature, set the accidental to a nonsense
+        # value so that the next note on this same staff line/space is forced to display its
+        # accidental.
         if (m_note.get('tie') == 't' and
-                accidental != 'n' and
+                accidental != key_signature_accidental and
                 pitch_name_and_octave not in accidentals):
             force_next = True
 
     # If the accidental does not match the current state of the accidentals in this measure
     # and key signature, then display it.
-    elif accidentals.get(pitch_name_and_octave, 'n') != accidental:
+    elif accidentals.get(pitch_name_and_octave, key_signature_accidental) != accidental:
         _show_accidental(m_note)
 
     # Otherwise, hide it.
@@ -470,12 +488,12 @@ def fix_accidentals_in_layer(m_layer, m_staffdef):
     Using a model of LilyPond's accidental rendering, fix the @accid/@accid.ges attributes and the
     temporary @accid.force attributes.
 
-    Limitations: only supports 4/4 time. Two different accidentals on the same note
-    in the same chord may not be rendered correctly.
+    Limitations: only supports 4/4 time. Two different accidentals on the same note in the same
+    chord may not be rendered correctly.
     '''
     if m_staffdef is None:
         m_staffdef = {}
-    key_signature = m_staffdef.get("key.sig", "0")
+    key_signature = music_utils.KEY_SIGNATURES[m_staffdef.get("key.sig", "0")]
     accidentals = {}
     measure_length = 1
     phase = 0
@@ -489,10 +507,10 @@ def fix_accidentals_in_layer(m_layer, m_staffdef):
             phase += music_utils.duration(m_node)
 
         if m_node.tag == mei.NOTE:
-            _render_accidental(m_node, accidentals)
+            _render_accidental(m_node, accidentals, key_signature)
         elif m_node.tag == mei.CHORD:
             for m_note in m_node:
-                _render_accidental(m_note, accidentals)
+                _render_accidental(m_note, accidentals, key_signature)
 
 
 @log.wrap('debug', 'remove unterminated tie', 'action')
