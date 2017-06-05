@@ -29,26 +29,23 @@ inbound or outbound conversion formats, although they are useful in converters.
 from lychee import exceptions
 import fractions
 
-
-PITCH_NAMES = 'cdefgab'
-
 KEY_SIGNATURES = {
-    '7f': 'fffffff',
-    '6f': 'fffnfff',
-    '5f': 'nffnfff',
-    '4f': 'nffnnff',
-    '3f': 'nnfnnff',
-    '2f': 'nnfnnnf',
-    '1f': 'nnnnnnf',
-    '0': 'nnnnnnn',
-    '1s': 'nnnsnnn',
-    '2s': 'snnsnnn',
-    '3s': 'snnssnn',
-    '4s': 'ssnssnn',
-    '5s': 'ssnsssn',
-    '6s': 'ssssssn',
-    '7s': 'sssssss',
-    }
+    '7f': {'c': 'f', 'd': 'f', 'e': 'f', 'f': 'f', 'g': 'f', 'a': 'f', 'b': 'f'},
+    '6f': {'c': 'f', 'd': 'f', 'e': 'f', 'f': 'n', 'g': 'f', 'a': 'f', 'b': 'f'},
+    '5f': {'c': 'n', 'd': 'f', 'e': 'f', 'f': 'n', 'g': 'f', 'a': 'f', 'b': 'f'},
+    '4f': {'c': 'n', 'd': 'f', 'e': 'f', 'f': 'n', 'g': 'n', 'a': 'f', 'b': 'f'},
+    '3f': {'c': 'n', 'd': 'n', 'e': 'f', 'f': 'n', 'g': 'n', 'a': 'f', 'b': 'f'},
+    '2f': {'c': 'n', 'd': 'n', 'e': 'f', 'f': 'n', 'g': 'n', 'a': 'n', 'b': 'f'},
+    '1f': {'c': 'n', 'd': 'n', 'e': 'n', 'f': 'n', 'g': 'n', 'a': 'n', 'b': 'f'},
+    '0': {'c': 'n', 'd': 'n', 'e': 'n', 'f': 'n', 'g': 'n', 'a': 'n', 'b': 'n'},
+    '1s': {'c': 'n', 'd': 'n', 'e': 'n', 'f': 's', 'g': 'n', 'a': 'n', 'b': 'n'},
+    '2s': {'c': 's', 'd': 'n', 'e': 'n', 'f': 's', 'g': 'n', 'a': 'n', 'b': 'n'},
+    '3s': {'c': 's', 'd': 'n', 'e': 'n', 'f': 's', 'g': 's', 'a': 'n', 'b': 'n'},
+    '4s': {'c': 's', 'd': 's', 'e': 'n', 'f': 's', 'g': 's', 'a': 'n', 'b': 'n'},
+    '6s': {'c': 's', 'd': 's', 'e': 's', 'f': 's', 'g': 's', 'a': 's', 'b': 'n'},
+    '5s': {'c': 's', 'd': 's', 'e': 'n', 'f': 's', 'g': 's', 'a': 's', 'b': 'n'},
+    '7s': {'c': 's', 'd': 's', 'e': 's', 'f': 's', 'g': 's', 'a': 's', 'b': 's'},
+}
 
 # See http://music-encoding.org/documentation/3.0.0/data.DURATION.cmn/
 DURATIONS = [
