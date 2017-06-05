@@ -51,7 +51,7 @@ from lxml import etree
 from lychee import exceptions
 from lychee.converters.inbound import lilypond_parser
 from lychee.utils import lilypond_utils
-from lychee.utils import timing
+from lychee.utils import music_utils
 from lychee import exceptions
 from lychee.logs import INBOUND_LOG as log
 from lychee.namespaces import mei
@@ -486,7 +486,7 @@ def fix_accidentals_in_layer(m_layer, m_staffdef):
             if phase >= measure_length:
                 accidentals = {}
                 phase = phase % measure_length
-            phase += timing.duration(m_node)
+            phase += music_utils.duration(m_node)
 
         if m_node.tag == mei.NOTE:
             _render_accidental(m_node, accidentals)

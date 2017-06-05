@@ -4,8 +4,8 @@
 # Program Name:           Lychee
 # Program Description:    MEI document manager for formalized document control
 #
-# Filename:               lychee/utils/timing.py
-# Purpose:                MEI timing utility functions
+# Filename:               lychee/utils/music_utils.py
+# Purpose:                Music utilities
 #
 # Copyright (C) 2017 Nathan Ho
 #
@@ -23,10 +23,32 @@
 # with this program.  If not, see <http://www.gnu.org/licenses/>.
 #--------------------------------------------------------------------------------------------------
 '''
-Contains utilities for MEI timing.
+Contains utilities that specifically concern LMEI as music notation. These tools are agnostic to any
+inbound or outbound conversion formats, although they are useful in converters.
 '''
 from lychee import exceptions
 import fractions
+
+
+PITCH_NAMES = 'cdefgab'
+
+KEY_SIGNATURES = {
+    '7f': 'fffffff',
+    '6f': 'fffnfff',
+    '5f': 'nffnfff',
+    '4f': 'nffnnff',
+    '3f': 'nnfnnff',
+    '2f': 'nnfnnnf',
+    '1f': 'nnnnnnf',
+    '0': 'nnnnnnn',
+    '1s': 'nnnsnnn',
+    '2s': 'snnsnnn',
+    '3s': 'snnssnn',
+    '4s': 'ssnssnn',
+    '5s': 'ssnsssn',
+    '6s': 'ssssssn',
+    '7s': 'sssssss',
+    }
 
 # See http://music-encoding.org/documentation/3.0.0/data.DURATION.cmn/
 DURATIONS = [
@@ -36,7 +58,7 @@ DURATIONS = [
 
 
 def duration(m_thing):
-    duration = m_thing.get("dur", None)
+    duration = m_thing.get("dur")
     if duration not in DURATIONS:
         raise exceptions.LycheeMEIError("Unknown duration: '{}'".format(duration))
     negative_log2_duration = DURATIONS.index(duration) - 2
@@ -45,7 +67,7 @@ def duration(m_thing):
     else:
         duration = fractions.Fraction(2 ** -negative_log2_duration, 1)
 
-    dots = m_thing.get("dots", None)
+    dots = m_thing.get("dots")
     if dots:
         dots = int(dots)
         duration = duration * fractions.Fraction(2 ** (dots + 1) - 1, 2 ** dots)
