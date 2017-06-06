@@ -69,3 +69,9 @@ def duration(m_thing):
         dots = int(dots)
         duration = duration * fractions.Fraction(2 ** (dots + 1) - 1, 2 ** dots)
     return duration
+
+
+def measure_duration(m_staffdef):
+    numerator = int(m_staffdef.get("meter.count", "4"))
+    denominator = int(m_staffdef.get("meter.unit", "4"))
+    return fractions.Fraction(numerator, denominator)

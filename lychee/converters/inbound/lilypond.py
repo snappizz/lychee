@@ -489,14 +489,14 @@ def fix_accidentals_in_layer(m_layer, m_staffdef):
     Using a model of LilyPond's accidental rendering, fix the @accid/@accid.ges attributes and the
     temporary @accid.force attributes.
 
-    Limitations: only supports 4/4 time. Two different accidentals on the same note in the same
-    chord may not be rendered correctly.
+    Limitations: doesn't support key and clef changes. Two different accidentals on the same note in
+    the same chord may not be rendered correctly.
     '''
     if m_staffdef is None:
         m_staffdef = {}
     key_signature = music_utils.KEY_SIGNATURES[m_staffdef.get("key.sig", "0")]
     accidentals = {}
-    measure_length = 1
+    measure_length = music_utils.measure_duration(m_staffdef)
     phase = 0
     for m_node in m_layer:
         # For all elements that occupy time, add their duration to the phase.
