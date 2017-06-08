@@ -116,6 +116,12 @@ def autobeam(m_layer, m_staffdef):
         m_staffdef = {}
     count, unit = time_signature(m_staffdef)
     unit = fractions.Fraction(1, unit)
+
+    # If the numerator of the time signature is a multiple of 3, and the denominator is a quarter
+    # note or smaller, then the beat size is multiplied by 3.
+    if unit <= fractions.Fraction(1, 4) and count % 3 == 0:
+        unit *= 3
+
     measure_length = measure_duration(m_staffdef)
 
     nodes_in_this_beam = []
