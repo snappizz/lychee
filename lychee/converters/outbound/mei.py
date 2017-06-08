@@ -63,6 +63,7 @@ def convert(document, **kwargs):
     '''
     if isinstance(document, etree._Element) and mei.SECTION == document.tag:
         document = create_measures(document)
+        rewrite_beam_spans(document)
         return wrap_section_element(document)
     else:
         raise exceptions.OutboundConversionError(_ERR_INPUT_NOT_SECTION)
@@ -232,5 +233,25 @@ def create_measures(lmei_section):
         # update "meas_nums" for next time we hit a <staff> with this @n
         meas_nums[l_staff.get('n')] = highest_meas_num_in_this_staff
 
-
     return m_section
+
+
+def rewrite_beam_spans(m_section):
+    xml_ids = {}
+    for el in m_section.iterfind('.//*'):
+        if el.get(xml.ID):
+            xml_ids[el.get(xml.ID)] = el
+
+    for m_beamspan in m_section.iterfind('.//' + mei.BEAM_SPAN):
+        beamspan_parent = m_beamspan.getparent()
+        beamspan_parent.remove(m_beamspan)
+
+        plist = m_beamspan.get('plist')
+        nodes = [xml_ids[x[1:]] for x in plist.split()]
+        parent = nodes[0].getparent()
+        insertion_index = parent.index(nodes[0])
+        beam = etree.Element(mei.BEAM)
+        for node in nodes:
+            parent.remove(node)
+            beam.append(node)
+        parent.insert(insertion_index, beam)

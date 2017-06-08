@@ -26,6 +26,9 @@
 Contains utilities that specifically concern LMEI as music notation. These tools are agnostic to any
 inbound or outbound conversion formats, although they are useful in converters.
 '''
+import random
+from lxml import etree
+from lychee.namespaces import mei, xml
 from lychee import exceptions
 import fractions
 
@@ -71,7 +74,76 @@ def duration(m_thing):
     return duration
 
 
+def time_signature(m_staffdef):
+    count = int(m_staffdef.get("meter.count", "4"))
+    unit = int(m_staffdef.get("meter.unit", "4"))
+    return count, unit
+
+
 def measure_duration(m_staffdef):
-    numerator = int(m_staffdef.get("meter.count", "4"))
-    denominator = int(m_staffdef.get("meter.unit", "4"))
-    return fractions.Fraction(numerator, denominator)
+    count, unit = time_signature(m_staffdef)
+    return fractions.Fraction(count, unit)
+
+
+def _make_beam(nodes_in_this_beam, m_layer):
+    # Reject beams with 0 or 1 note.
+    if len(nodes_in_this_beam) < 2:
+        return
+
+    xml_ids = []
+    for node in nodes_in_this_beam:
+        if not node.get(xml.ID):
+            node.set(xml.ID, 'S-s-m-l-e' + ''.join([str(random.randint(0, 9)) for i in range(8)]))
+        xml_id = node.get(xml.ID)
+        xml_ids.append('#' + xml_id)
+
+    beam_span = etree.Element(mei.BEAM_SPAN)
+    beam_span.attrib.update({
+        'plist': ' '.join(xml_ids),
+        'startid': xml_ids[0],
+        'endid': xml_ids[-1],
+        })
+
+    # Insert the new beamSpan after the last node in it.
+    last_node = nodes_in_this_beam[-1]
+    parent_of_last_node = last_node.getparent()
+    index_of_last_node_in_parent = parent_of_last_node.index(last_node)
+    parent_of_last_node.insert(index_of_last_node_in_parent + 1, beam_span)
+
+
+def autobeam(m_layer, m_staffdef):
+    if m_staffdef is None:
+        m_staffdef = {}
+    count, unit = time_signature(m_staffdef)
+    unit = fractions.Fraction(1, unit)
+    measure_length = measure_duration(m_staffdef)
+
+    nodes_in_this_beam = []
+
+    beat_phase = 0
+    for m_node in m_layer:
+        if m_node.get('dur'):
+
+            this_node_is_beamable = (
+                m_node.tag in (mei.NOTE, mei.CHORD) and
+                m_node.get('dur') not in ('long', 'breve', '1', '2', '4'))
+            this_node_interrupts_beams = (
+                m_node.tag == mei.REST or (
+                    m_node.tag in (mei.NOTE, mei.CHORD) and
+                    m_node.get('dur') in ('long', 'breve', '1', '2', '4')))
+
+            if this_node_interrupts_beams:
+                _make_beam(nodes_in_this_beam, m_layer)
+                nodes_in_this_beam = []
+            if this_node_is_beamable:
+                nodes_in_this_beam.append(m_node)
+
+            beat_phase += duration(m_node)
+            if beat_phase >= unit:
+                beat_phase = beat_phase % unit
+                if beat_phase == 0:
+                    _make_beam(nodes_in_this_beam, m_layer)
+                    nodes_in_this_beam = []
+                    pass
+
+    _make_beam(nodes_in_this_beam, m_layer)
