@@ -746,7 +746,8 @@ class TestRunOutbound(TestInteractiveSession):
         mock_do_out.assert_called_once_with(
             self.session.get_repo_dir(),
             views_info,
-            outbound_dtype)
+            outbound_dtype,
+            mock.ANY)
         mock_out_finished.emit.assert_called_once_with(
             dtype=outbound_dtype,
             placement=mock_do_out.return_value['placement'],
@@ -823,7 +824,7 @@ class TestRunOutbound(TestInteractiveSession):
 
         self.session.run_outbound(views_info=views_info, revision=target_revision)
 
-        mock_do_out.assert_called_with(self.session.get_repo_dir(), views_info, 'mei')
+        mock_do_out.assert_called_with(self.session.get_repo_dir(), views_info, 'mei', mock.ANY)
         assert self.session._cleanup_for_new_action.called
 
 

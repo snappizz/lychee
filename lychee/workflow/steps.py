@@ -184,7 +184,7 @@ def do_vcs(session, pathnames):
 
 
 @log.wrap('info', 'run the "outbound" steps')
-def do_outbound_steps(repo_dir, views_info, dtype):
+def do_outbound_steps(repo_dir, views_info, dtype, user_settings=None):
     '''
     Run the outbound veiws and conversion steps for a single outbound "dtype."
 
@@ -194,6 +194,7 @@ def do_outbound_steps(repo_dir, views_info, dtype):
     :type views_info: str
     :param str dtype: The data type to use for outbound conversion, as specified in
         :const:`lychee.converters.OUTBOUND_CONVERTERS`.
+    :param user_settings: An XML tree of user settings that are not committed to the repository.
     :returns: Post-conversion data as described below.
     :rtype: dict
     :raises: :exc:`lychee.exceptions.InvalidDataTypeError` when there is no module available for
@@ -228,7 +229,9 @@ def do_outbound_steps(repo_dir, views_info, dtype):
             raise exceptions.SectionNotFoundError(_SCORE_IS_EMPTY)
 
         from_views = _do_outbound_views(repo_dir, views_info, dtype)
-        converted = converters.OUTBOUND_CONVERTERS[dtype](from_views['convert'])
+        converted = converters.OUTBOUND_CONVERTERS[dtype](
+            from_views['convert'],
+            user_settings=user_settings)
         return {'dtype': dtype, 'document': converted, 'placement': from_views['placement']}
 
     else:

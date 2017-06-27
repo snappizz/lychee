@@ -30,6 +30,7 @@ import os
 import os.path
 import shutil
 import tempfile
+import codecs
 
 from lxml import etree
 
@@ -50,6 +51,8 @@ _FAILURE_DURING_INBOUND = 'Action failed during the inbound steps'
 _UNKNOWN_REVISION = "ACTION_START requested a revision that doesn't exist"
 _VCS_UNSUPPORTED = 'VCS is unsupported'
 
+USER_SETTINGS_FILE = os.path.join("user", "lychee_settings.xml")
+
 
 @log.wrap('info', 'error signal', 'action')
 def _error_slot(action, **kwargs):
@@ -66,6 +69,12 @@ signals.inbound.CONVERSION_ERROR.connect(_error_slot)
 signals.inbound.VIEWS_ERROR.connect(_error_slot)
 signals.vcs.ERROR.connect(_error_slot)
 signals.outbound.ERROR.connect(_error_slot)
+
+
+def make_blank_user_settings():
+    root = etree.Element('lycheeSettings')
+    tree = etree.ElementTree(root)
+    return tree
 
 
 class InteractiveSession(object):
@@ -253,6 +262,23 @@ class InteractiveSession(object):
             # NOTE: "run_outbound" must be False, in order to avoid a recursion loop
             return self.set_repo_dir('', run_outbound=False)
 
+    def _get_user_settings_file_name(self):
+        if self._repo_dir is None:
+            return None
+        return os.path.join(self._repo_dir, USER_SETTINGS_FILE)
+
+    def _read_user_settings(self):
+        settings_file_name = self._get_user_settings_file_name()
+        if settings_file_name is None:
+            return make_blank_user_settings()
+        parser = etree.XMLParser(ns_clean=True)
+        try:
+            with codecs.open(settings_file_name, encoding='utf-8') as settings_file:
+                tree = etree.parse(settings_file, parser)
+        except IOError:
+            return make_blank_user_settings()
+        return tree
+
     @log.wrap('critical', 'run a Lychee action', 'action')
     def _action_start(self, action, **kwargs):
         '''
@@ -419,11 +445,13 @@ class InteractiveSession(object):
                 else:
                     changeset = summary['parent']
 
+            user_settings = self._read_user_settings()
+
             # run the outbound conversions
             signals.outbound.STARTED.emit()
             repo_dir = self.get_repo_dir()
             for outbound_dtype in self._registrar.get_registered_formats():
-                post = steps.do_outbound_steps(repo_dir, views_info, outbound_dtype)
+                post = steps.do_outbound_steps(repo_dir, views_info, outbound_dtype, user_settings)
                 signals.outbound.CONVERSION_FINISHED.emit(
                     dtype=outbound_dtype,
                     placement=post['placement'],

@@ -473,11 +473,15 @@ class TestOutboundSteps(object):
         orig_mei = converters.OUTBOUND_CONVERTERS[dtype]
         converters.OUTBOUND_CONVERTERS[dtype] = mei_mock
         try:
-            actual = steps.do_outbound_steps(repo_dir, views_info, dtype)
+            actual = steps.do_outbound_steps(
+                repo_dir,
+                views_info,
+                dtype,
+                session.make_blank_user_settings())
         finally:
             converters.OUTBOUND_CONVERTERS[dtype] = orig_mei
 
-        mei_mock.assert_called_once_with(mock_views.return_value['convert'])
+        mei_mock.assert_called_once_with(mock_views.return_value['convert'], user_settings=mock.ANY)
         assert expected == actual
 
     def test_empty_document(self, temp_doc):
