@@ -52,7 +52,8 @@ _FAILURE_DURING_INBOUND = 'Action failed during the inbound steps'
 _UNKNOWN_REVISION = "ACTION_START requested a revision that doesn't exist"
 _VCS_UNSUPPORTED = 'VCS is unsupported'
 
-USER_SETTINGS_FILE = os.path.join("user", "lychee_settings.xml")
+USER_SETTINGS_DIR = "user"
+USER_SETTINGS_FILE = os.path.join(USER_SETTINGS_DIR, "lychee_settings.xml")
 
 
 @log.wrap('info', 'error signal', 'action')
@@ -257,20 +258,33 @@ class InteractiveSession(object):
             # NOTE: "run_outbound" must be False, in order to avoid a recursion loop
             return self.set_repo_dir('', run_outbound=False)
 
-    def _get_user_settings_file_name(self):
-        return os.path.join(self._repo_dir, USER_SETTINGS_FILE)
-
     def _read_user_settings(self):
         if self._repo_dir is None:
             return {}
-        settings_file_name = self._get_user_settings_file_name()
+        settings_file_name = os.path.join(self._repo_dir, USER_SETTINGS_FILE)
         try:
             with codecs.open(settings_file_name, encoding='utf-8') as settings_file:
                 user_settings = xmltodict.parse(settings_file.read())
-                user_settings = user_settings["lycheeSettings"]
         except IOError:
             return {}
+        user_settings = user_settings["lycheeSettings"]
         return user_settings
+
+    def _write_user_settings(self, user_settings):
+        if self._repo_dir is None:
+            return
+        settings_file_name = os.path.join(self._repo_dir, USER_SETTINGS_FILE)
+        try:
+            os.makedirs(os.path.join(self._repo_dir, USER_SETTINGS_DIR))
+        except OSError:
+            pass
+        user_settings = {"lycheeSettings": user_settings}
+        try:
+            with codecs.open(settings_file_name, 'w', encoding='utf-8') as settings_file:
+                settings_file.write(xmltodict.unparse(user_settings))
+        except IOError:
+            return
+        return
 
     @log.wrap('critical', 'run a Lychee action', 'action')
     def _action_start(self, action, **kwargs):
@@ -381,6 +395,8 @@ class InteractiveSession(object):
             converted=self._inbound_converted,
             session=self,
             views_info=self._inbound_views_info)
+
+        self._write_user_settings(user_settings)
 
         steps.do_vcs(session=self, pathnames=document_pathnames)
 
