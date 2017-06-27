@@ -15,6 +15,7 @@ setup(
         'lithoxyl==0.4',
         'lxml>3,<4',
         'signalslot',
+        'xmltodict==0.11'
     ),
     extras_require={
         'devel': (

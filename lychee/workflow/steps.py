@@ -67,7 +67,7 @@ _NO_OUTBOUND_VIEWS = 'There is no outbound views processor for {0}'
 
 
 @log.wrap('info', 'run the "inbound conversion" step')
-def do_inbound_conversion(session, dtype, document):
+def do_inbound_conversion(session, dtype, document, user_settings=None):
     '''
     Run the "inbound conversion" step.
 
@@ -86,7 +86,7 @@ def do_inbound_conversion(session, dtype, document):
     '''
     try:
         _choose_inbound_converter(dtype.lower())
-        signals.inbound.CONVERSION_START.emit(document=document)
+        signals.inbound.CONVERSION_START.emit(document=document, user_settings=user_settings)
     except Exception as exc:
         if isinstance(exc, exceptions.InvalidDataTypeError):
             msg = exc.args[0]

@@ -855,7 +855,8 @@ class TestRunInboundDocVcs(TestInteractiveSession):
         mock_conv.assert_called_once_with(
             session=self.session,
             dtype=dtype,
-            document=doc)
+            document=doc,
+            user_settings={})
         assert not mock_views.called
         assert not mock_doc.called
         assert not mock_vcs.called
@@ -879,7 +880,8 @@ class TestRunInboundDocVcs(TestInteractiveSession):
         mock_conv.assert_called_once_with(
             session=self.session,
             dtype=dtype,
-            document=doc)
+            document=doc,
+            user_settings={})
 
     @mock.patch('lychee.workflow.steps.do_inbound_conversion')
     @mock.patch('lychee.workflow.steps.do_inbound_views')

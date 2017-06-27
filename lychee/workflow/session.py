@@ -33,6 +33,7 @@ import tempfile
 import codecs
 
 from lxml import etree
+import xmltodict
 
 # Mercurial and mercurial-hug are disabled for now.
 # from mercurial import error as hg_error
@@ -69,12 +70,6 @@ signals.inbound.CONVERSION_ERROR.connect(_error_slot)
 signals.inbound.VIEWS_ERROR.connect(_error_slot)
 signals.vcs.ERROR.connect(_error_slot)
 signals.outbound.ERROR.connect(_error_slot)
-
-
-def make_blank_user_settings():
-    root = etree.Element('lycheeSettings')
-    tree = etree.ElementTree(root)
-    return tree
 
 
 class InteractiveSession(object):
@@ -263,21 +258,19 @@ class InteractiveSession(object):
             return self.set_repo_dir('', run_outbound=False)
 
     def _get_user_settings_file_name(self):
-        if self._repo_dir is None:
-            return None
         return os.path.join(self._repo_dir, USER_SETTINGS_FILE)
 
     def _read_user_settings(self):
+        if self._repo_dir is None:
+            return {}
         settings_file_name = self._get_user_settings_file_name()
-        if settings_file_name is None:
-            return make_blank_user_settings()
-        parser = etree.XMLParser(ns_clean=True)
         try:
             with codecs.open(settings_file_name, encoding='utf-8') as settings_file:
-                tree = etree.parse(settings_file, parser)
+                user_settings = xmltodict.parse(settings_file.read())
+                user_settings = user_settings["lycheeSettings"]
         except IOError:
-            return make_blank_user_settings()
-        return tree
+            return {}
+        return user_settings
 
     @log.wrap('critical', 'run a Lychee action', 'action')
     def _action_start(self, action, **kwargs):
@@ -365,10 +358,13 @@ class InteractiveSession(object):
         '''
         self._cleanup_for_new_action()
 
+        user_settings = self._read_user_settings()
+
         steps.do_inbound_conversion(
             session=self,
             dtype=dtype,
-            document=doc)
+            document=doc,
+            user_settings=user_settings)
         if not isinstance(self._inbound_converted, (etree._Element, etree._ElementTree)):
             raise exceptions.InboundConversionError()
 

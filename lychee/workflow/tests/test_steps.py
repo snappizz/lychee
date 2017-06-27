@@ -255,7 +255,7 @@ class TestInboundConversionStep(TestInteractiveSession):
         try:
             steps.do_inbound_conversion(self.session, dtype, document)
             mock_choose.assert_called_once_with('dtype')
-            start_slot.assert_called_once_with(document=document)
+            start_slot.assert_called_once_with(document=document, user_settings=None)
             mock_flush.assert_called_once_with()
         finally:
             signals.inbound.CONVERSION_START.disconnect(start_slot)
@@ -473,11 +473,7 @@ class TestOutboundSteps(object):
         orig_mei = converters.OUTBOUND_CONVERTERS[dtype]
         converters.OUTBOUND_CONVERTERS[dtype] = mei_mock
         try:
-            actual = steps.do_outbound_steps(
-                repo_dir,
-                views_info,
-                dtype,
-                session.make_blank_user_settings())
+            actual = steps.do_outbound_steps(repo_dir, views_info, dtype)
         finally:
             converters.OUTBOUND_CONVERTERS[dtype] = orig_mei
 
