@@ -470,6 +470,8 @@ class InteractiveSession(object):
                     document=post['document'],
                     changeset=changeset)
 
+            self._write_user_settings(user_settings)
+
         finally:
             self._cleanup_for_new_action()
             if initial_revision:
