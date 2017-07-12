@@ -194,7 +194,7 @@ def do_outbound_steps(repo_dir, views_info, dtype, user_settings=None):
     :type views_info: str
     :param str dtype: The data type to use for outbound conversion, as specified in
         :const:`lychee.converters.OUTBOUND_CONVERTERS`.
-    :param user_settings: An XML tree of user settings that are not committed to the repository.
+    :param user_settings: A dictionary of user settings.
     :returns: Post-conversion data as described below.
     :rtype: dict
     :raises: :exc:`lychee.exceptions.InvalidDataTypeError` when there is no module available for

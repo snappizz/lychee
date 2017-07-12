@@ -259,32 +259,41 @@ class InteractiveSession(object):
             return self.set_repo_dir('', run_outbound=False)
 
     def _read_user_settings(self):
+        """
+        Read from this repo's user settings XML file.
+        """
         if self._repo_dir is None:
             return {}
+
         settings_file_name = os.path.join(self._repo_dir, USER_SETTINGS_FILE)
         try:
             with codecs.open(settings_file_name, encoding='utf-8') as settings_file:
                 user_settings = xmltodict.parse(settings_file.read())
         except IOError:
             return {}
+
         user_settings = user_settings["lycheeSettings"]
         return user_settings
 
     def _write_user_settings(self, user_settings):
+        """
+        Write to this repo's user settings XML file.
+        """
         if self._repo_dir is None:
             return
+
         settings_file_name = os.path.join(self._repo_dir, USER_SETTINGS_FILE)
         try:
             os.makedirs(os.path.join(self._repo_dir, USER_SETTINGS_DIR))
         except OSError:
             pass
+
         user_settings = {"lycheeSettings": user_settings}
         try:
             with codecs.open(settings_file_name, 'w', encoding='utf-8') as settings_file:
                 settings_file.write(xmltodict.unparse(user_settings))
         except IOError:
-            return
-        return
+            pass
 
     @log.wrap('critical', 'run a Lychee action', 'action')
     def _action_start(self, action, **kwargs):
