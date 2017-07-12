@@ -509,6 +509,7 @@ class TestSection(object):
         ''')
         expected = ''.join([
             '\\version "2.18.2"\n',
+            '\\language "nederlands"\n',
             "\\score {\n",
             "<<\n",
             # clarinet
