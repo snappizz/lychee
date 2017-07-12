@@ -70,7 +70,7 @@ def convert(document, user_settings=None, **kwargs):
     if user_settings is None:
         user_settings = {}
     context = {
-        'language': user_settings.get('lilypondLanguage', 'nederlands')
+        'language': user_settings.get('lilyPondLanguage', 'nederlands')
     }
     if document.tag in CONV_FUNCS:
         return CONV_FUNCS[document.tag](document, context=context)

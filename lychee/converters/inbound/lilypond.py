@@ -196,7 +196,7 @@ def do_document(l_document, user_settings):
     if l_score is None:
         raise exceptions.LilyPondError('Empty document')
 
-    user_settings['lilypondLanguage'] = context['language']
+    user_settings['lilyPondLanguage'] = context['language']
 
     converted = do_score(l_score, context=context)
     return converted

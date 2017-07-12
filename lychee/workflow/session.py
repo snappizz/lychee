@@ -258,7 +258,7 @@ class InteractiveSession(object):
             # NOTE: "run_outbound" must be False, in order to avoid a recursion loop
             return self.set_repo_dir('', run_outbound=False)
 
-    def _read_user_settings(self):
+    def read_user_settings(self):
         """
         Read from this repo's user settings XML file.
         """
@@ -275,7 +275,7 @@ class InteractiveSession(object):
         user_settings = user_settings["lycheeSettings"]
         return user_settings
 
-    def _write_user_settings(self, user_settings):
+    def write_user_settings(self, user_settings):
         """
         Write to this repo's user settings XML file.
         """
@@ -381,7 +381,7 @@ class InteractiveSession(object):
         '''
         self._cleanup_for_new_action()
 
-        user_settings = self._read_user_settings()
+        user_settings = self.read_user_settings()
 
         steps.do_inbound_conversion(
             session=self,
@@ -405,7 +405,7 @@ class InteractiveSession(object):
             session=self,
             views_info=self._inbound_views_info)
 
-        self._write_user_settings(user_settings)
+        self.write_user_settings(user_settings)
 
         steps.do_vcs(session=self, pathnames=document_pathnames)
 
@@ -466,7 +466,7 @@ class InteractiveSession(object):
                 else:
                     changeset = summary['parent']
 
-            user_settings = self._read_user_settings()
+            user_settings = self.read_user_settings()
 
             # run the outbound conversions
             signals.outbound.STARTED.emit()
@@ -479,7 +479,7 @@ class InteractiveSession(object):
                     document=post['document'],
                     changeset=changeset)
 
-            self._write_user_settings(user_settings)
+            self.write_user_settings(user_settings)
 
         finally:
             self._cleanup_for_new_action()
