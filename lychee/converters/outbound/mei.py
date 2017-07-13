@@ -62,11 +62,18 @@ def convert(document, **kwargs):
     :raises: :exc:`lychee.exceptions.OutboundConversionError` when there is a forseeable error.
     '''
     if isinstance(document, etree._Element) and mei.SECTION == document.tag:
-        document = create_measures(document)
-        rewrite_beam_spans(document)
-        return wrap_section_element(document)
+        return convert_raw(document)
     else:
         raise exceptions.OutboundConversionError(_ERR_INPUT_NOT_SECTION)
+
+
+def convert_raw(document):
+    '''
+    Convert a Lychee-MEI document into an MEI document without verifying that it is an MEI section.
+    '''
+    document = create_measures(document)
+    rewrite_beam_spans(document)
+    return wrap_section_element(document)
 
 
 def wrap_section_element(section):
@@ -255,3 +262,5 @@ def rewrite_beam_spans(m_section):
             parent.remove(node)
             beam.append(node)
         parent.insert(insertion_index, beam)
+
+    return m_section
