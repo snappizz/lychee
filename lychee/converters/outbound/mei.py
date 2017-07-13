@@ -244,6 +244,13 @@ def create_measures(lmei_section):
 
 
 def rewrite_beam_spans(m_section):
+    '''
+    Modify the given section to replace <beamSpan> with <beam>, because Verovio doesn't support
+    <beamSpan>.
+
+    The element passed in does not actually need to be a section. It can be any parent of the
+    elements we're interested in.
+    '''
     xml_ids = {}
     for el in m_section.iterfind('.//*'):
         if el.get(xml.ID):
