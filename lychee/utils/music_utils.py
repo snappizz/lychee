@@ -61,6 +61,11 @@ DURATIONS = [
 
 
 def duration(m_thing):
+    '''
+    Given an etree.Element, read @dur and @dots attributes and return a fractions.Fraction
+    representing the duration of this object in whole notes. Since this only reads attributes using
+    the 'get' method, you can also just pass in a dict of attributes.
+    '''
     duration = m_thing.get('dur')
     if duration not in DURATIONS:
         raise exceptions.LycheeMEIError("Unknown duration: '{}'".format(duration))
@@ -78,17 +83,29 @@ def duration(m_thing):
 
 
 def time_signature(m_staffdef):
+    '''
+    Given an MEI staffDef object, return a tuple of its @meter.count and @meter.unit as integers.
+    You can also pass in a dict of attributes.
+    '''
     count = int(m_staffdef.get('meter.count', '4'))
     unit = int(m_staffdef.get('meter.unit', '4'))
     return count, unit
 
 
 def measure_duration(m_staffdef):
+    '''
+    Given an MEI staffDef object, find its time signature and return a fractions.Fraction
+    representing its duration in whole notes.
+    '''
     count, unit = time_signature(m_staffdef)
     return fractions.Fraction(count, unit)
 
 
-def _make_beam(nodes_in_this_beam, m_layer):
+def make_beam(nodes_in_this_beam, m_layer):
+    '''
+    Create an MEI beamSpan across a list of nodes in a layer. The nodes are assumed to be provided
+    from left to right.
+    '''
     # Reject beams with 0 or 1 note.
     if len(nodes_in_this_beam) < 2:
         return
@@ -114,7 +131,11 @@ def _make_beam(nodes_in_this_beam, m_layer):
     parent_of_last_node.insert(index_of_last_node_in_parent + 1, beam_span)
 
 
-def autobeam(m_layer, m_staffdef):
+def get_autobeam_structure(m_layer, m_staffdef):
+    '''
+    Given an MEI layer and a staffDef that has our time signature, return a list of lists describing
+    the beams that should be made. Each list corresponds to a beam, containing a list of MEI nodes.
+    '''
     if m_staffdef is None:
         m_staffdef = {}
     count, unit = time_signature(m_staffdef)
@@ -128,6 +149,7 @@ def autobeam(m_layer, m_staffdef):
     measure_length = measure_duration(m_staffdef)
 
     nodes_in_this_beam = []
+    beams = []
 
     beat_phase = 0
     for m_node in m_layer:
@@ -135,13 +157,13 @@ def autobeam(m_layer, m_staffdef):
             this_node_is_beamable = (
                 m_node.tag in (mei.NOTE, mei.CHORD) and
                 m_node.get('dur') not in ('long', 'breve', '1', '2', '4'))
-            this_node_interrupts_beams = (
+            this_node_breaks_beams = (
                 m_node.tag == mei.REST or (
                     m_node.tag in (mei.NOTE, mei.CHORD) and
                     m_node.get('dur') in ('long', 'breve', '1', '2', '4')))
 
-            if this_node_interrupts_beams:
-                _make_beam(nodes_in_this_beam, m_layer)
+            if this_node_breaks_beams:
+                beams.append(nodes_in_this_beam)
                 nodes_in_this_beam = []
             if this_node_is_beamable:
                 nodes_in_this_beam.append(m_node)
@@ -150,8 +172,18 @@ def autobeam(m_layer, m_staffdef):
             if beat_phase >= unit:
                 beat_phase = beat_phase % unit
                 if beat_phase == 0:
-                    _make_beam(nodes_in_this_beam, m_layer)
+                    beams.append(nodes_in_this_beam)
                     nodes_in_this_beam = []
                     pass
 
-    _make_beam(nodes_in_this_beam, m_layer)
+    beams.append(nodes_in_this_beam)
+
+    # Filter out empty beams and length-1 beams.
+    beams = [beam for beam in beams if len(beam) > 1]
+    return beams
+
+
+def autobeam(m_layer, m_staffdef):
+    beams = get_autobeam_structure(m_layer, m_staffdef)
+    for beam in beams:
+        make_beam(beam, m_layer)
